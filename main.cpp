@@ -238,12 +238,13 @@ void KAPI::publicMethod(const string& method,
 }
 
 //------------------------------------------------------------------------------
+// FIXME: this function doesn't work correctly yet.
 // deals with private API methods:
 void KAPI::privateMethod(const string& method, 
 			const KAPI::Input& input) const
 {   
    // create path
-   string path = "/" + version_ + "/public/" + method;
+   string path = "/" + version_ + "/private/" + method;
    string postdata = buildQuery(input);
 
    // generate message signature
@@ -278,7 +279,7 @@ int main()
       KAPI::Input in; 
 
       in.insert(make_pair("pair", "XXBTZUSD,XXBTXLTC"));
-      kapi.privateMethod("Ticker", in);
+      kapi.publicMethod("Ticker", in);
    }
    catch(std::exception& e) {
       std::cerr << "Error: " << e.what() << std::endl;
