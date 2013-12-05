@@ -20,35 +20,78 @@ public:
    // helper type to make requests
    typedef std::map<std::string,std::string> Input;
 
+   // constructor with all explicit parameters
+   KAPI(const string& key, const string& secret, 
+	const string& url, const string& version);
+
+   // default API base URL and API version
+   KAPI(const string& key, const string& secret);
+   
+   // constructor with empty API key and API secret
    KAPI();
+
+   // distructor
    ~KAPI();
 
    // makes public method to kraken.com
-   void publicMethod(const string&, const KAPI::Input&) const;
+   void publicMethod(const string& method, const KAPI::Input& input) const;
 
    // makes private method to kraken.com
-   void privateMethod(const string&, const KAPI::Input&) const;
+   void privateMethod(const string& method, const KAPI::Input& input) const;
+
+   // TODO: public market data
+   //void time();
+   //void assets();
 
 private:
+   // init CURL and other stuffs
+   void init(); 
+
    // helper function to build a query string from KAPI::Input
    static string buildQuery(const KAPI::Input&);
 
-   // helper functions: 
-   static string nonce();                             // generate a nonce
-   static string sha256(const string&);               // hash with SHA256
-   static string base64dec(const string&);            // decode Base64 string
+   // helper private functions: 
+   static string nonce();                   // generates a nonce
+   static string sha256(const string&);     // hashs with SHA256
+   static string b64dec(const string&);     // decodes base64 strings 
    static string hmac(const string&, const string&);  // hmac function (SHA512)
 
-   CURL *curl_;
-   string url_;
-   string version_;
+
+   string key_;     // API key
+   string secret_;  // API secret
+   string url_;     // API base URL
+   string version_; // API version
+   CURL*  curl_;    // CURL handle
 };
 
 //------------------------------------------------------------------------------
+// constructor with all explicit parameters
+KAPI::KAPI(const string& key, const string& secret, 
+	   const string& url, const string& version)
+   :key_(key), secret_(secret), url_(url), version_(version) 
+{ 
+   init(); 
+}
 
-// initializes libcurl with kraken.com infos:
+//------------------------------------------------------------------------------
+// default API base URL and API version
+KAPI::KAPI(const string& key, const string& secret)
+   :key_(key), secret_(secret), url_("https://api.kraken.com"), version_("0") 
+{ 
+   init(); 
+}
+
+//------------------------------------------------------------------------------
+// constructor with empty API key and API secret
 KAPI::KAPI() 
-   :url_("https://api.kraken.com"), version_("0")
+   :key_(""), secret_(""), url_("https://api.kraken.com"), version_("0") 
+{ 
+   init(); 
+}
+
+//------------------------------------------------------------------------------
+// initializes libcurl:
+void KAPI::init()
 {
    curl_ = curl_easy_init();
    if (curl_) {
@@ -63,7 +106,7 @@ KAPI::KAPI()
 }
 
 //------------------------------------------------------------------------------
-
+// distructor:
 KAPI::~KAPI() 
 {
    curl_easy_cleanup(curl_);
@@ -125,7 +168,7 @@ string KAPI::sha256(const string& s)
 
 //------------------------------------------------------------------------------
 // helper function to decode an ecoded Base64 string:
-string KAPI::base64dec(const string& s) 
+string KAPI::b64dec(const string& s) 
 {
    BIO* b64 = BIO_new(BIO_f_base64());
    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
@@ -168,9 +211,9 @@ string KAPI::hmac(const string& data, const string& key)
 }
 
 //------------------------------------------------------------------------------
-
+// deals with public API methods:
 void KAPI::publicMethod(const string& method, 
-			 const KAPI::Input& input) const
+			const KAPI::Input& input) const
 {
    CURLcode res;
    ostringstream oss;
@@ -195,37 +238,31 @@ void KAPI::publicMethod(const string& method,
 }
 
 //------------------------------------------------------------------------------
-
+// deals with private API methods:
 void KAPI::privateMethod(const string& method, 
 			const KAPI::Input& input) const
-{
-   CURLcode res;
-   ostringstream oss;
-   
+{   
    // create path
-   string path = "/" + version_ + "/private/" + method;
+   string path = "/" + version_ + "/public/" + method;
    string postdata = buildQuery(input);
 
+   // generate message signature
+   string sign = hmac(path + sha256(nonce() + postdata), b64dec(secret_)); 
 
-   cout << "AAAAA: "<< path + sha256(nonce() + postdata) << endl;
-   cout << hmac("hello world", "012345678") << endl;
-
-
-   // build method URL and make request
-   oss << url_ << '/' << version_ << "/public/" << method;
-   string methodUrl = oss.str();
-   cout << methodUrl.c_str() << endl;
+    // build method URL and make request
+   string methodUrl = url_ + path;
+   cout << methodUrl << endl;
    curl_easy_setopt(curl_, CURLOPT_URL, methodUrl.c_str());
    cout << buildQuery(input) << endl;
 
    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, buildQuery(input).c_str());
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
 
-   res = curl_easy_perform(curl_);
-   if (res != CURLE_OK) {
-      oss.clear();  
+   CURLcode result = curl_easy_perform(curl_);
+   if (result != CURLE_OK) {
+      ostringstream oss;
       oss << "curl_easy_perform() failed: "  
-	  << curl_easy_strerror(res);
+	  << curl_easy_strerror(result);
       throw runtime_error( oss.str() );
    }
 }
@@ -238,17 +275,18 @@ int main()
 
    try {
       KAPI kapi;
-      KAPI::Input input; 
+      KAPI::Input in; 
 
-      input.insert(make_pair("pair", "XXBTZUSD,XXBTXLTC"));
-      kapi.privateMethod("Ticker", input);
+      in.insert(make_pair("pair", "XXBTZUSD,XXBTXLTC"));
+      kapi.privateMethod("Ticker", in);
    }
    catch(std::exception& e) {
-      std::cerr << "error: " << e.what() << std::endl;
+      std::cerr << "Error: " << e.what() << std::endl;
    }
    catch(...) {
-      std::cerr << "unknow exception" << std::endl;
+      std::cerr << "Unknow exception." << std::endl;
    }
 
    curl_global_cleanup();
+   return 0;
 }
