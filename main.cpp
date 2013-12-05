@@ -215,25 +215,27 @@ string KAPI::hmac(const string& data, const string& key)
 void KAPI::publicMethod(const string& method, 
 			const KAPI::Input& input) const
 {
-   CURLcode res;
-   ostringstream oss;
+   // build path and postdata 
+   string path = "/" + version_ + "/public/" + method;
+   string postdata = buildQuery(input);
 
-   // build method URL and make request
-   oss << url_ << '/' << version_ << "/public/" << method;
-   string methodUrl = oss.str();
-   cout << methodUrl.c_str() << endl;
+   // build method URL and set up CURL
+   string methodUrl = url_ + path;
+
+   cout << "methodUrl==" << methodUrl << endl
+	<< "postdata==" << postdata << endl;
+
    curl_easy_setopt(curl_, CURLOPT_URL, methodUrl.c_str());
-   cout << buildQuery(input) << endl;
-
-   curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, buildQuery(input).c_str());
+   curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postdata.c_str());
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
-
-   res = curl_easy_perform(curl_);
-   if (res != CURLE_OK) {
-      oss.clear();  
+   
+   // perform CURL request
+   CURLcode result = curl_easy_perform(curl_);
+   if (result != CURLE_OK) {
+      ostringstream oss;  
       oss << "curl_easy_perform() failed: "  
-	  << curl_easy_strerror(res);
-      throw runtime_error( oss.str() );
+	  << curl_easy_strerror(result);
+      throw runtime_error(oss.str());
    }
 }
 
@@ -241,9 +243,9 @@ void KAPI::publicMethod(const string& method,
 // FIXME: this function doesn't work correctly yet.
 // deals with private API methods:
 void KAPI::privateMethod(const string& method, 
-			const KAPI::Input& input) const
+			 const KAPI::Input& input) const
 {   
-   // create path
+   // build path and postdata 
    string path = "/" + version_ + "/private/" + method;
    string postdata = buildQuery(input);
 
@@ -252,19 +254,22 @@ void KAPI::privateMethod(const string& method,
 
     // build method URL and make request
    string methodUrl = url_ + path;
-   cout << methodUrl << endl;
-   curl_easy_setopt(curl_, CURLOPT_URL, methodUrl.c_str());
-   cout << buildQuery(input) << endl;
 
-   curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, buildQuery(input).c_str());
+   cout << "methodUrl==" << methodUrl << endl
+	<< "postdata==" << postdata << endl
+	<< "sign==" << sign << endl;
+
+   curl_easy_setopt(curl_, CURLOPT_URL, methodUrl.c_str());
+   curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postdata.c_str());
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
 
+   // perform CURL request
    CURLcode result = curl_easy_perform(curl_);
    if (result != CURLE_OK) {
       ostringstream oss;
       oss << "curl_easy_perform() failed: "  
 	  << curl_easy_strerror(result);
-      throw runtime_error( oss.str() );
+      throw runtime_error(oss.str());
    }
 }
 
