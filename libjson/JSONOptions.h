@@ -43,7 +43,7 @@
  *  from the errors that it encounters.  This option is recommended for those who
  *  feel it's possible for their program to encounter invalid json.
  */
-#define JSON_SAFE
+//#define JSON_SAFE
 
 
 /*
