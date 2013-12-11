@@ -50,6 +50,9 @@ private:
    void message_signature(const std::string& path, const std::string& nonce, 
 			  const std::string& postdata, std::string& sign) const;
 
+   // CURL writefunction callback
+   static size_t write_cb(char* ptr, size_t size, size_t nmemb, void* userdata);
+
    // helper function to build a query string from KAPI::Input
    static std::string build_query(const KAPI::Input&);
 
@@ -72,11 +75,14 @@ private:
 			   const std::vector<unsigned char>& key, 
 			   std::vector<unsigned char>& output);
 
-   std::string key_;     // API key
-   std::string secret_;  // API secret
-   std::string url_;     // API base URL
-   std::string version_; // API version
-   CURL*  curl_;    // CURL handle
+   std::string key_;       // API key
+   std::string secret_;    // API secret
+   std::string url_;       // API base URL
+   std::string version_;   // API version
+   CURL*  curl_;           // CURL handle
+
+   // string used to store CURL response in WRITEFUNCTION callback
+   std::string response_;
 };
 
 //------------------------------------------------------------------------------

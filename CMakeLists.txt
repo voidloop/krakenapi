@@ -47,3 +47,4 @@ list (APPEND LIBS libjson)
 #-------------------------------------------------------------------------------
 add_executable (test main.cpp kapi.cpp)
 target_link_libraries (test ${LIBS} libjson)
+

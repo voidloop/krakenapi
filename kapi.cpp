@@ -1,3 +1,4 @@
+#include <iostream>
 #include <iomanip>
 #include <stdexcept>
 #include <sstream>
@@ -54,6 +55,10 @@ void KAPI::init()
       curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 2L);
       curl_easy_setopt(curl_, CURLOPT_USERAGENT, "Kraken C++ API Client");
       curl_easy_setopt(curl_, CURLOPT_POST, 1L);
+      // set callback function and pass 'this' object to the callback function 
+      curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, KAPI::write_cb);
+      curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(this));
+
    }
    else 
       throw runtime_error("can't create curl handle");
@@ -213,6 +218,19 @@ void KAPI::message_signature(const string& path, const string& nonce,
 }
 
 //------------------------------------------------------------------------------
+// CURL write function callback:
+size_t KAPI::write_cb(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+   size_t real_size = size * nmemb;
+   KAPI* kapi_ptr = reinterpret_cast<KAPI*>(userdata);
+
+   string res(ptr, real_size);
+   kapi_ptr->response_.swap(res);
+
+   return real_size;
+}
+
+//------------------------------------------------------------------------------
 // deals with public API methods:
 void KAPI::public_method(const string& method, 
 		         const KAPI::Input& input) const
@@ -236,6 +254,9 @@ void KAPI::public_method(const string& method,
 	  << curl_easy_strerror(result);
       throw runtime_error(oss.str());
    }
+
+   // OK! it's time to parse JSON response from kraken.com  
+   cout << "Response: " << response_ << endl;
 }
 
 //------------------------------------------------------------------------------
@@ -288,6 +309,8 @@ void KAPI::private_method(const string& method,
 	  << curl_easy_strerror(result);
       throw runtime_error(oss.str());
    }
+
+
 }
 
 //------------------------------------------------------------------------------
