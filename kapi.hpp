@@ -47,18 +47,13 @@ private:
    void init();
 
    // create signature for private requests
-   std::string message_signature(const std::string& path,
-				 const std::string& nonce,
-				 const std::string& postdata) const;
+   std::string signature(const std::string& path,
+			 const std::string& nonce,
+			 const std::string& postdata) const;
 
    // CURL writefunction callback
-   static size_t write_cb(char* ptr, size_t size, size_t nmemb, void* userdata);
-
-   // helper function to build a query string from KAPI::Input
-   static std::string build_query(const KAPI::Input&);
-
-   // creates a nonce
-   static std::string create_nonce(); 
+   static size_t write_cb(char* ptr, size_t size, 
+			  size_t nmemb, void* userdata);
 
    std::string key_;     // API key
    std::string secret_;  // API secret

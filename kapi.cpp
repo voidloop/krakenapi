@@ -14,16 +14,13 @@
 #include "kapi.hpp"
 #include "libjson/libjson.h"
 
-using namespace std;
-
 //------------------------------------------------------------------------------
 
 namespace Kraken {
 
 //------------------------------------------------------------------------------
 // helper function to compute SHA256:
-static std::vector<unsigned char> 
-sha256(const std::string& data)
+static std::vector<unsigned char> sha256(const std::string& data)
 {
    std::vector<unsigned char> digest(SHA256_DIGEST_LENGTH);
 
@@ -37,8 +34,7 @@ sha256(const std::string& data)
 
 //------------------------------------------------------------------------------
 // helper function to decode a base64 string to a vector of bytes:
-static std::vector<unsigned char> 
-b64_decode(const std::string& data) 
+static std::vector<unsigned char> b64_decode(const std::string& data) 
 {
    BIO* b64 = BIO_new(BIO_f_base64());
    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
@@ -51,15 +47,14 @@ b64_decode(const std::string& data)
    BIO_free_all(bmem);
 
    if (decoded_size < 0)
-      throw runtime_error("failed while decoding base64.");
+      throw std::runtime_error("failed while decoding base64.");
    
    return output;
 }
 
 //------------------------------------------------------------------------------
 // helper function to encode a vector of bytes to a base64 string:
-static std::string 
-b64_encode(const std::vector<unsigned char>& data) 
+static std::string b64_encode(const std::vector<unsigned char>& data) 
 {
    BIO* b64 = BIO_new(BIO_f_base64());
    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
@@ -100,10 +95,45 @@ hmac_sha512(const std::vector<unsigned char>& data,
    return digest;
 }
 
+
+//------------------------------------------------------------------------------
+// builds a query string from KAPI::Input (a=1&b=2&...)
+static std::string build_query(const KAPI::Input& input)
+{
+   std::ostringstream oss;
+   KAPI::Input::const_iterator it = input.begin();
+   for (; it != input.end(); ++it) {
+      if (it != input.begin()) oss << '&';  // delimiter
+      oss << it->first <<'='<< it->second;
+   }
+
+   return oss.str();
+}
+
+//------------------------------------------------------------------------------
+// helper function to create a nonce:
+static std::string create_nonce()
+{
+   std::ostringstream oss;
+
+   timeval tp;
+   if (gettimeofday(&tp, NULL) != 0) {
+      oss << "gettimeofday() failed: " << strerror(errno); 
+      throw std::runtime_error(oss.str());
+   }
+   else {
+      // format output string 
+      oss << std::setfill('0') 
+	  << std::setw(10) << tp.tv_sec 
+	  << std::setw(6)  << tp.tv_usec;
+   }
+   return oss.str();
+}
+
 //------------------------------------------------------------------------------
 // constructor with all explicit parameters
-KAPI::KAPI(const string& key, const string& secret, 
-	   const string& url, const string& version)
+KAPI::KAPI(const std::string& key, const std::string& secret, 
+	   const std::string& url, const std::string& version)
    :key_(key), secret_(secret), url_(url), version_(version) 
 { 
    init(); 
@@ -111,7 +141,7 @@ KAPI::KAPI(const string& key, const string& secret,
 
 //------------------------------------------------------------------------------
 // default API base URL and API version
-KAPI::KAPI(const string& key, const string& secret)
+KAPI::KAPI(const std::string& key, const std::string& secret)
    :key_(key), secret_(secret), url_("https://api.kraken.com"), version_("0") 
 { 
    init(); 
@@ -139,8 +169,9 @@ void KAPI::init()
       // set callback function 
       curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, KAPI::write_cb);
    }
-   else 
-      throw runtime_error("can't create curl handle");
+   else {
+      throw std::runtime_error("can't create curl handle");
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -151,52 +182,15 @@ KAPI::~KAPI()
 }
 
 //------------------------------------------------------------------------------
-// builds a query string from KAPI::Input:
-std::string 
-KAPI::build_query(const KAPI::Input& input)
-{
-   std::ostringstream oss;
-   KAPI::Input::const_iterator it = input.begin();
-   for (; it != input.end(); ++it) {
-      if (it != input.begin()) oss << '&';  // delimiter
-      oss << it->first <<'='<< it->second;
-   }
-
-   return oss.str();
-}
-
-//------------------------------------------------------------------------------
-// helper function to create a nonce:
-string KAPI::create_nonce()
-{
-   ostringstream oss;
-
-   timeval tp;
-   if (gettimeofday(&tp, NULL) != 0) {
-      oss << "gettimeofday() failed: "
-	  << strerror(errno); 
-      throw runtime_error(oss.str());
-   }
-   else {
-      // format output string 
-      oss << std::setfill('0') 
-	  << std::setw(10) << tp.tv_sec 
-	  << std::setw(6)  << tp.tv_usec;
-   }
-   return oss.str();
-}
-
-//------------------------------------------------------------------------------
 // returns message signature generated from a URI path, a nonce 
 // and postdata, message signature is created as a follows:
 // 
 //   hmac_sha512(path + sha256(nonce + postdata), b64decode(secret)) 
 //
 // and the result is converted in a base64 string: 
-std::string 
-KAPI::message_signature(const std::string& path, 
-			const std::string& nonce, 
-			const std::string& postdata) const
+std::string KAPI::signature(const std::string& path, 
+			    const std::string& nonce, 
+			    const std::string& postdata) const
 {
    // add path to data to encrypt
    std::vector<unsigned char> data(path.begin(), path.end());
@@ -215,43 +209,38 @@ KAPI::message_signature(const std::string& path,
 // CURL write function callback:
 size_t KAPI::write_cb(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
-   size_t real_size = size * nmemb;
-   string* response = reinterpret_cast<string*>(userdata);
-
-   string res(ptr, real_size);
-   response->swap(res);
-
-   return response->length();
+   std::string* response = reinterpret_cast<std::string*>(userdata);
+   response->assign(ptr, size*nmemb);
+   return response->size();
 }
 
 //------------------------------------------------------------------------------
 // deals with public API methods:
-string KAPI::public_method(const string& method, 
-			   const KAPI::Input& input) const
+std::string KAPI::public_method(const std::string& method, 
+				const KAPI::Input& input) const
 {
    // build method URL
-   string path = "/" + version_ + "/public/" + method;
-   string method_url = url_ + path;   
+   std::string path = "/" + version_ + "/public/" + method;
+   std::string method_url = url_ + path;   
    curl_easy_setopt(curl_, CURLOPT_URL, method_url.c_str());
 
    // build postdata 
-   string postdata = build_query(input);
+   std::string postdata = build_query(input);
    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postdata.c_str());
 
    // reset the http header
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
  
    // where CURL write callback function stores the response
-   string response;
+   std::string response;
    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&response));
   
    // perform CURL request
    CURLcode result = curl_easy_perform(curl_);
    if (result != CURLE_OK) {
-      ostringstream oss;  
-      oss << "curl_easy_perform() failed: "  
-	  << curl_easy_strerror(result);
-      throw runtime_error(oss.str());
+      std::ostringstream oss;  
+      oss << "curl_easy_perform() failed: "<< curl_easy_strerror(result);
+      throw std::runtime_error(oss.str());
    }
 
    return response;
@@ -259,17 +248,19 @@ string KAPI::public_method(const string& method,
 
 //------------------------------------------------------------------------------
 // deals with private API methods:
-string KAPI::private_method(const string& method, 
-			    const KAPI::Input& input) const
+std::string KAPI::private_method(const std::string& method, 
+				 const KAPI::Input& input) const
 {   
    // build method URL
-   string path = "/" + version_ + "/private/" + method;
-   string method_url = url_ + path;
+   std::string path = "/" + version_ + "/private/" + method;
+   std::string method_url = url_ + path;
+
    curl_easy_setopt(curl_, CURLOPT_URL, method_url.c_str());
 
    // create a nonce and and postdata 
-   string nonce = create_nonce();
-   string postdata = "nonce=" + nonce;
+   std::string nonce = create_nonce();
+   std::string postdata = "nonce=" + nonce;
+
    // if 'input' is not empty generate other postdata
    if (!input.empty())
       postdata = postdata + "&" + build_query(input);
@@ -277,17 +268,16 @@ string KAPI::private_method(const string& method,
 
    // add custom header
    curl_slist* chunk = NULL;
-   string header = "API-Key: " + key_;
-   chunk = curl_slist_append(chunk, header.c_str()); 
-   curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
+   std::string key_header =  "API-Key: "  + key_;
+   std::string sign_header = "API-Sign: " + signature(path, nonce, postdata);
 
-   // generate message signature
-   header = "API-Sign: " + message_signature(path, nonce, postdata);
-   chunk = curl_slist_append(chunk, header.c_str()); 
+   chunk = curl_slist_append(chunk, key_header.c_str()); 
+   curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
+   chunk = curl_slist_append(chunk, sign_header.c_str()); 
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
    
    // where CURL write callback function stores the response
-   string response;
+   std::string response;
    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&response));
 
    // perform CURL request
@@ -298,10 +288,9 @@ string KAPI::private_method(const string& method,
   
    // check perform result
    if (result != CURLE_OK) {
-      ostringstream oss;
-      oss << "curl_easy_perform() failed: "  
-	  << curl_easy_strerror(result);
-      throw runtime_error(oss.str());
+      std::ostringstream oss;
+      oss << "curl_easy_perform() failed: " << curl_easy_strerror(result);
+      throw std::runtime_error(oss.str());
    }
    
    return response;
