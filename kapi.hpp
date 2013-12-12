@@ -46,6 +46,9 @@ private:
    // init CURL and other stuffs
    void init();
 
+   // TODO: gather common commands from public_method and 
+   // private_method in a single method: curl_perfom
+
    // create signature for private requests
    std::string signature(const std::string& path,
 			 const std::string& nonce,

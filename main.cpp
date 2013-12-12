@@ -16,9 +16,8 @@ int main()
       KAPI kapi;
       KAPI::Input in;
 
+      //cout << kapi.private_method("Balance", in) << endl;
       cout << kapi.public_method("Time", in) << endl;
-
-      //kapi.private_method("Balance", in);
    }
    catch(exception& e) {
       cerr << "Error: " << e.what() << endl;

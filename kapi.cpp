@@ -271,9 +271,8 @@ std::string KAPI::private_method(const std::string& method,
    std::string key_header =  "API-Key: "  + key_;
    std::string sign_header = "API-Sign: " + signature(path, nonce, postdata);
 
-   chunk = curl_slist_append(chunk, key_header.c_str()); 
-   curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
-   chunk = curl_slist_append(chunk, sign_header.c_str()); 
+   chunk = curl_slist_append(chunk, key_header.c_str());
+   chunk = curl_slist_append(chunk, sign_header.c_str());
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
    
    // where CURL write callback function stores the response
