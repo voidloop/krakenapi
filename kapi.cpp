@@ -12,12 +12,93 @@
 #include <openssl/bio.h>
 
 #include "kapi.hpp"
+#include "libjson/libjson.h"
 
 using namespace std;
 
 //------------------------------------------------------------------------------
 
 namespace Kraken {
+
+//------------------------------------------------------------------------------
+// helper function to compute SHA256:
+static std::vector<unsigned char> 
+sha256(const std::string& data)
+{
+   std::vector<unsigned char> digest(SHA256_DIGEST_LENGTH);
+
+   SHA256_CTX ctx;
+   SHA256_Init(&ctx);
+   SHA256_Update(&ctx, data.c_str(), data.length());
+   SHA256_Final(digest.data(), &ctx);
+
+   return digest;
+}
+
+//------------------------------------------------------------------------------
+// helper function to decode a base64 string to a vector of bytes:
+static std::vector<unsigned char> 
+b64_decode(const std::string& data) 
+{
+   BIO* b64 = BIO_new(BIO_f_base64());
+   BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+
+   BIO* bmem = BIO_new_mem_buf((void*)data.c_str(),data.length());
+   bmem = BIO_push(b64, bmem);
+   
+   std::vector<unsigned char> output(data.length());
+   int decoded_size = BIO_read(bmem, output.data(), output.size());
+   BIO_free_all(bmem);
+
+   if (decoded_size < 0)
+      throw runtime_error("failed while decoding base64.");
+   
+   return output;
+}
+
+//------------------------------------------------------------------------------
+// helper function to encode a vector of bytes to a base64 string:
+static std::string 
+b64_encode(const std::vector<unsigned char>& data) 
+{
+   BIO* b64 = BIO_new(BIO_f_base64());
+   BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+
+   BIO* bmem = BIO_new(BIO_s_mem());
+   b64 = BIO_push(b64, bmem);
+   
+   BIO_write(b64, data.data(), data.size());
+   BIO_flush(b64);
+
+   BUF_MEM* bptr = NULL;
+   BIO_get_mem_ptr(b64, &bptr);
+   
+   std::string output(bptr->data, bptr->length);
+   BIO_free_all(b64);
+
+   return output;
+}
+
+//------------------------------------------------------------------------------
+// helper function to hash with HMAC algorithm:
+static std::vector<unsigned char> 
+hmac_sha512(const std::vector<unsigned char>& data, 
+	    const std::vector<unsigned char>& key)
+{   
+   unsigned int len = EVP_MAX_MD_SIZE;
+   std::vector<unsigned char> digest(len);
+
+   HMAC_CTX ctx;
+   HMAC_CTX_init(&ctx);
+
+   HMAC_Init_ex(&ctx, key.data(), key.size(), EVP_sha512(), NULL);
+   HMAC_Update(&ctx, data.data(), data.size());
+   HMAC_Final(&ctx, digest.data(), &len);
+   
+   HMAC_CTX_cleanup(&ctx);
+   
+   return digest;
+}
 
 //------------------------------------------------------------------------------
 // constructor with all explicit parameters
@@ -55,10 +136,8 @@ void KAPI::init()
       curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 2L);
       curl_easy_setopt(curl_, CURLOPT_USERAGENT, "Kraken C++ API Client");
       curl_easy_setopt(curl_, CURLOPT_POST, 1L);
-      // set callback function and pass 'this' object to the callback function 
+      // set callback function 
       curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, KAPI::write_cb);
-      curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(this));
-
    }
    else 
       throw runtime_error("can't create curl handle");
@@ -73,9 +152,10 @@ KAPI::~KAPI()
 
 //------------------------------------------------------------------------------
 // builds a query string from KAPI::Input:
-string KAPI::build_query(const KAPI::Input& input)
+std::string 
+KAPI::build_query(const KAPI::Input& input)
 {
-   ostringstream oss;
+   std::ostringstream oss;
    KAPI::Input::const_iterator it = input.begin();
    for (; it != input.end(); ++it) {
       if (it != input.begin()) oss << '&';  // delimiter
@@ -104,117 +184,31 @@ string KAPI::create_nonce()
 	  << std::setw(6)  << tp.tv_usec;
    }
    return oss.str();
-} 
-
-//------------------------------------------------------------------------------
-// helper function to compute SHA256:
-void KAPI::sha256(const string& input, vector<unsigned char>& output)
-{
-   vector<unsigned char> digest(SHA256_DIGEST_LENGTH);
-
-   SHA256_CTX ctx;
-   SHA256_Init(&ctx);
-
-   SHA256_Update(&ctx, input.c_str(), input.length());
-   SHA256_Final(digest.data(), &ctx);
-
-   output.swap(digest);  
 }
 
 //------------------------------------------------------------------------------
-// helper function to decode a base64 string to a vector of bytes:
-void KAPI::b64_decode(const string& input, vector<unsigned char>& output) 
-{
-   BIO* b64 = BIO_new(BIO_f_base64());
-   BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-
-   BIO* bmem = BIO_new_mem_buf((void*)input.c_str(), input.length());
-   bmem = BIO_push(b64, bmem);
-   
-   vector<unsigned char> result(input.length());
-   int decoded_size = BIO_read(bmem, result.data(), result.size());
-   BIO_free_all(bmem);
-
-   if (decoded_size < 0)
-      throw runtime_error("failed while decoding base64.");
-   
-   output.swap(result);
-   output.resize(decoded_size);
-}
-
-//------------------------------------------------------------------------------
-// helper function to encode a vector of bytes to a base64 string:
-void KAPI::b64_encode(const vector<unsigned char>& input, string& output) 
-{
-   BIO* b64 = BIO_new(BIO_f_base64());
-   BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-
-   BIO* bmem = BIO_new(BIO_s_mem());
-   b64 = BIO_push(b64, bmem);
-   
-   BIO_write(b64, input.data(), input.size());
-   BIO_flush(b64);
-
-   BUF_MEM* bptr = NULL;
-   BIO_get_mem_ptr(b64, &bptr);
-   
-   string result(bptr->data, bptr->length);
-   BIO_free_all(b64);
-
-   output.swap(result);
-}
-
-//------------------------------------------------------------------------------
-// helper function to hash with HMAC algorithm:
-void KAPI::hmac_sha512(const vector<unsigned char>& input, 
-		       const vector<unsigned char>& key,
-		       vector<unsigned char>& output)
-{   
-   unsigned int len = EVP_MAX_MD_SIZE;
-   vector<unsigned char> digest(len);
-
-   HMAC_CTX ctx;
-   HMAC_CTX_init(&ctx);
-
-   HMAC_Init_ex(&ctx, key.data(), key.size(), EVP_sha512(), NULL);
-   HMAC_Update(&ctx, input.data(), input.size());
-   HMAC_Final(&ctx, digest.data(), &len);
-   
-   HMAC_CTX_cleanup(&ctx);
-   
-   output.swap(digest);
-}
-
-//------------------------------------------------------------------------------
-// creates message signature in 'sign' generated from a URI path, a nonce 
+// returns message signature generated from a URI path, a nonce 
 // and postdata, message signature is created as a follows:
 // 
 //   hmac_sha512(path + sha256(nonce + postdata), b64decode(secret)) 
 //
 // and the result is converted in a base64 string: 
-void KAPI::message_signature(const string& path, const string& nonce, 
-			     const string& postdata, string& sign) const
+std::string 
+KAPI::message_signature(const std::string& path, 
+			const std::string& nonce, 
+			const std::string& postdata) const
 {
    // add path to data to encrypt
-   vector<unsigned char> data(path.begin(), path.end());
+   std::vector<unsigned char> data(path.begin(), path.end());
 
-   // merge nonce and postdata (nonce + postdata) and compute SHA256
-   vector<unsigned char> nonce_postdata;
-   sha256(nonce + postdata, nonce_postdata);
+   // concatenate nonce and postdata and compute SHA256
+   std::vector<unsigned char> nonce_postdata = sha256(nonce + postdata);
 
-   // merge path and nonce_postdata (path + sha256(nonce, postdata))
+   // concatenate path and nonce_postdata (path + sha256(nonce + postdata))
    data.insert(data.end(), nonce_postdata.begin(), nonce_postdata.end());
 
-   // decode Kraken secret
-   vector<unsigned char> decoded_secret;
-   b64_decode(secret_, decoded_secret);
-
    // and compute HMAC
-   vector<unsigned char> digest;  
-   hmac_sha512(data, decoded_secret, digest);
-
-   // put result in 'sign'
-   b64_encode(digest, sign);
+   return b64_encode( hmac_sha512(data, b64_decode(secret_)) );
 }
 
 //------------------------------------------------------------------------------
@@ -222,30 +216,35 @@ void KAPI::message_signature(const string& path, const string& nonce,
 size_t KAPI::write_cb(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
    size_t real_size = size * nmemb;
-   KAPI* kapi_ptr = reinterpret_cast<KAPI*>(userdata);
+   string* response = reinterpret_cast<string*>(userdata);
 
    string res(ptr, real_size);
-   kapi_ptr->response_.swap(res);
+   response->swap(res);
 
-   return real_size;
+   return response->length();
 }
 
 //------------------------------------------------------------------------------
 // deals with public API methods:
-void KAPI::public_method(const string& method, 
-		         const KAPI::Input& input) const
+string KAPI::public_method(const string& method, 
+			   const KAPI::Input& input) const
 {
-   // build path and postdata 
+   // build method URL
    string path = "/" + version_ + "/public/" + method;
-   string postdata = build_query(input);
-
-   // build method URL and set up CURL
-   string method_url = url_ + path;
-
+   string method_url = url_ + path;   
    curl_easy_setopt(curl_, CURLOPT_URL, method_url.c_str());
+
+   // build postdata 
+   string postdata = build_query(input);
    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postdata.c_str());
+
+   // reset the http header
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
-   
+ 
+   // where CURL write callback function stores the response
+   string response;
+   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&response));
+  
    // perform CURL request
    CURLcode result = curl_easy_perform(curl_);
    if (result != CURLE_OK) {
@@ -255,47 +254,42 @@ void KAPI::public_method(const string& method,
       throw runtime_error(oss.str());
    }
 
-   // OK! it's time to parse JSON response from kraken.com  
-   cout << "Response: " << response_ << endl;
+   return response;
 }
 
 //------------------------------------------------------------------------------
 // deals with private API methods:
-void KAPI::private_method(const string& method, 
-			 const KAPI::Input& input) const
+string KAPI::private_method(const string& method, 
+			    const KAPI::Input& input) const
 {   
-   // build path
+   // build method URL
    string path = "/" + version_ + "/private/" + method;
+   string method_url = url_ + path;
+   curl_easy_setopt(curl_, CURLOPT_URL, method_url.c_str());
 
-   // create a nonce and add it to postdata 
+   // create a nonce and and postdata 
    string nonce = create_nonce();
    string postdata = "nonce=" + nonce;
-
    // if 'input' is not empty generate other postdata
    if (!input.empty())
       postdata = postdata + "&" + build_query(input);
-
-   // generate message signature
-   string sign;
-   message_signature(path, nonce, postdata, sign);
-
-    // build method URL and make request
-   string method_url = url_ + path;
-
-   curl_easy_setopt(curl_, CURLOPT_URL, method_url.c_str());
    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postdata.c_str());
 
    // add custom header
    curl_slist* chunk = NULL;
-
    string header = "API-Key: " + key_;
    chunk = curl_slist_append(chunk, header.c_str()); 
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
 
-   header = "API-Sign: " + sign;
+   // generate message signature
+   header = "API-Sign: " + message_signature(path, nonce, postdata);
    chunk = curl_slist_append(chunk, header.c_str()); 
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
    
+   // where CURL write callback function stores the response
+   string response;
+   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&response));
+
    // perform CURL request
    CURLcode result = curl_easy_perform(curl_);
 
@@ -309,8 +303,8 @@ void KAPI::private_method(const string& method,
 	  << curl_easy_strerror(result);
       throw runtime_error(oss.str());
    }
-
-
+   
+   return response;
 }
 
 //------------------------------------------------------------------------------

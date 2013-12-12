@@ -16,7 +16,7 @@ int main()
       KAPI kapi;
       KAPI::Input in;
 
-      kapi.public_method("Time", in);
+      cout << kapi.public_method("Time", in) << endl;
 
       //kapi.private_method("Balance", in);
    }

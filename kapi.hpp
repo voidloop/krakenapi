@@ -30,13 +30,13 @@ public:
    // distructor
    ~KAPI();
 
-   // makes public method to kraken.com
-   void public_method(const std::string& method,
-		      const KAPI::Input& input) const;
+   // makes public method to kraken.com 
+   std::string public_method(const std::string& method,
+			     const KAPI::Input& input) const;
 
    // makes private method to kraken.com
-   void private_method(const std::string& method,
-		       const KAPI::Input& input) const;
+   std::string private_method(const std::string& method,
+			      const KAPI::Input& input) const;
 
    // TODO: public market data
    //void time();
@@ -47,8 +47,9 @@ private:
    void init();
 
    // create signature for private requests
-   void message_signature(const std::string& path, const std::string& nonce, 
-			  const std::string& postdata, std::string& sign) const;
+   std::string message_signature(const std::string& path,
+				 const std::string& nonce,
+				 const std::string& postdata) const;
 
    // CURL writefunction callback
    static size_t write_cb(char* ptr, size_t size, size_t nmemb, void* userdata);
@@ -59,30 +60,11 @@ private:
    // creates a nonce
    static std::string create_nonce(); 
 
-   // decodes a base64 string to a vector of bytes
-   static void b64_decode(const std::string& input,
-			  std::vector<unsigned char>& output);
-
-   // encodes a vector of bytes to a base64 string
-   static void b64_encode(const std::vector<unsigned char>& input, 
-                          std::string& output);
-   
-   // hashs data with SHA256
-   static void sha256(const std::string& input, std::vector<unsigned char>& output);
-
-   // encrypts data with HMAC and SHA512
-   static void hmac_sha512(const std::vector<unsigned char>& input, 
-			   const std::vector<unsigned char>& key, 
-			   std::vector<unsigned char>& output);
-
-   std::string key_;       // API key
-   std::string secret_;    // API secret
-   std::string url_;       // API base URL
-   std::string version_;   // API version
-   CURL*  curl_;           // CURL handle
-
-   // string used to store CURL response in WRITEFUNCTION callback
-   std::string response_;
+   std::string key_;     // API key
+   std::string secret_;  // API secret
+   std::string url_;     // API base URL
+   std::string version_; // API version
+   CURL*  curl_;         // CURL handle
 };
 
 //------------------------------------------------------------------------------
