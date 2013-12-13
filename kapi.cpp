@@ -210,8 +210,10 @@ std::string KAPI::signature(const std::string& path,
 size_t KAPI::write_cb(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
    std::string* response = reinterpret_cast<std::string*>(userdata);
-   response->assign(ptr, size*nmemb);
-   return response->size();
+   size_t real_size = size * nmemb;
+
+   response->append(ptr, real_size);
+   return real_size;
 }
 
 //------------------------------------------------------------------------------
