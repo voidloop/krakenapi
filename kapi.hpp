@@ -63,6 +63,10 @@ private:
    std::string url_;     // API base URL
    std::string version_; // API version
    CURL*  curl_;         // CURL handle
+
+   // disallow copying
+   KAPI(const KAPI&);
+   KAPI& operator=(const KAPI&);
 };
 
 //------------------------------------------------------------------------------
