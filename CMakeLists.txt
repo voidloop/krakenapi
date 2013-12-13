@@ -53,8 +53,16 @@ set_target_properties (libjson PROPERTIES
 list (APPEND LIBS libjson)
 
 #-------------------------------------------------------------------------------
-# Add the executable
+# Add the executable 'test'
 #-------------------------------------------------------------------------------
 add_executable (test main.cpp)
 target_link_libraries (test ${LIBS})
+
+#-------------------------------------------------------------------------------
+# Add the executable 'kmarketdata'
+#-------------------------------------------------------------------------------
+add_executable (kmarketdata kmarketdata.cpp)
+set_target_properties (kmarketdata PROPERTIES 
+		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE")
+target_link_libraries (kmarketdata ${LIBS})
 

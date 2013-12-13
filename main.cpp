@@ -16,8 +16,9 @@ int main()
       KAPI kapi;
       KAPI::Input in;
 
-      //cout << kapi.private_method("Balance", in) << endl;
-      cout << kapi.public_method("Time", in) << endl;
+      // get recent trades 
+      in.insert(make_pair("pair", "XXBTZEUR"));
+      cout << kapi.public_method("Trades", in) << endl;
    }
    catch(exception& e) {
       cerr << "Error: " << e.what() << endl;

@@ -14,6 +14,8 @@
 #include "kapi.hpp"
 #include "libjson/libjson.h"
 
+#define CURL_VERBOSE 0L //1L = enabled, 0L = disabled
+
 //------------------------------------------------------------------------------
 
 namespace Kraken {
@@ -161,7 +163,7 @@ void KAPI::init()
 {
    curl_ = curl_easy_init();
    if (curl_) {
-      curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
+      curl_easy_setopt(curl_, CURLOPT_VERBOSE, CURL_VERBOSE);
       curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1L);
       curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 2L);
       curl_easy_setopt(curl_, CURLOPT_USERAGENT, "Kraken C++ API Client");
