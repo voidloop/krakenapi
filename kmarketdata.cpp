@@ -19,6 +19,23 @@ struct Trade {
 };
 
 //------------------------------------------------------------------------------
+// prints a Trade
+ostream& operator<<(ostream& os, const Trade& t) 
+{
+   struct tm timeinfo;
+   gmtime_r(&t.time, &timeinfo);
+   
+   char buffer[20];
+   strftime(buffer, 20, "%T", &timeinfo);
+
+   return os << buffer << ','
+	     << t.order << ','
+	     << fixed
+	     << setprecision(5) << t.price << ','
+	     << setprecision(9) << t.volume;
+}
+
+//------------------------------------------------------------------------------
 // helper function to load a Trade from a JSONNode:
 Trade get_trade(const JSONNode& node) 
 {
@@ -63,22 +80,24 @@ int main()
 	 // format the output in columns: time, order, price and volume
 	 JSONNode result = root.at("result")[0];
 	 
+	 time_t step = 3600;
+	 map<time_t,vector<Trade> > trades;
+
+	 // group results by base time
 	 for (JSONNode::const_iterator it = result.begin();
 	      it != result.end(); ++it) {
-	    Trade t = get_trade(*it); 
-
-	    struct tm timeinfo;
-	    localtime_r(&t.time, &timeinfo);
-
-	    char buffer[20];
-	    strftime(buffer, 20, "%T", &timeinfo);
-
-	    cout << left << setw(12) << buffer << "   "
-		 << left << setw(1) << t.order << "   " 
-		 << fixed << right 
-		 << setprecision(5) << t.price << "   " 
-		 << setprecision(9) << t.volume << endl;
+	    Trade t = get_trade(*it);
+	    time_t base = t.time - (t.time % step);
+	    trades[base].push_back(t);
 	 }
+	
+	 // create candlesticks
+	 for (map<time_t,vector<Trade> >::const_iterator it = trades.begin();
+	      it != trades.end(); ++it) 
+	 {
+	    cout << it->first << endl;
+	 }
+
       }
 
    }
