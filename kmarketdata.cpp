@@ -48,6 +48,102 @@ Trade get_trade(const JSONNode& node)
 }
 
 //------------------------------------------------------------------------------
+// helper types to map time to a group of trades:
+typedef vector<Trade> Period; 
+typedef map<time_t,Period> Period_map;
+
+//------------------------------------------------------------------------------
+// deal with candlesticks:
+struct Candlestick {
+   double open, close, low, high;
+   double volume;
+   time_t time;
+
+   // create a HA candlestick from a period of trades 
+   // WITHOUT a prior HA candlestick
+   Candlestick(time_t t, const Period& p) 
+      : time(t), volume(0)
+   {
+      double p_open  = p.front().price;
+      double p_close = p.back().price;
+      init(p, p_open, p_close); 
+   }
+
+   // create a HA candlestick from a period of trades
+   // WITH a prior HA candlestick
+   Candlestick(time_t t, const Period& p, const Candlestick& prior) 
+      : time(t), volume(0)
+   { 
+      // initialize using prior HA candlestick's open-close values
+      init(p, prior.open, prior.close); 
+   }
+
+private:
+   // initialize the HA candlestick
+   void init(const Period& p, double ha_open, double ha_close) {
+
+      // return if the Period is empty
+      if (p.empty()) return;
+
+      // initialize period values
+      double p_open   = p.front().price;
+      double p_close  = p.back().price;
+      double p_low    = min(p_open, p_close);
+      double p_high   = max(p_open, p_close);
+
+      // find low price and high price of the current period
+      for(Period::const_iterator it = p.begin(); it != p.end(); ++it) {
+	 if (it->price < p_low) p_low = it->price;
+	 if (it->price > p_high) p_high = it->price;
+	 volume += it->volume;
+      }
+
+      // compute Heikin-Ashi values
+      close = (p_open + p_close + p_low + p_high) / 4;
+      open  = (ha_open + ha_close) / 2; 
+      low   = min(p_low, min(open, close));
+      high  = max(p_high, max(open, close));
+   }
+
+};
+
+//------------------------------------------------------------------------------
+// prints out a Candlestick
+ostream& operator<<(ostream& os, const Candlestick& c) 
+{
+   struct tm timeinfo;
+   localtime_r(&c.time, &timeinfo);
+   
+   char buffer[20];
+   strftime(buffer, 20, "%T", &timeinfo);
+
+   return os << buffer << ','
+	     << fixed << setprecision(5) 
+	     << c.open << ','
+	     << c.high << ','
+	     << c.low << ','
+	     << c.close << ','
+	     << setprecision(9) 
+	     << c.volume;
+}
+
+//------------------------------------------------------------------------------
+// creates candlesticks from a Period_map
+void append_candlesticks(const Period_map& pm, vector<Candlestick>& c) 
+{
+   // if there are no periods do nothing
+   if (pm.empty()) return;
+   
+   Period_map::const_iterator it = pm.begin();
+
+   if (c.empty())
+      c.push_back(Candlestick(it->first, it->second));
+      
+   for (++it; it != pm.end(); ++it)
+      c.push_back(Candlestick(it->first, it->second, c.back()));
+}
+
+//------------------------------------------------------------------------------
 
 int main() 
 { 
@@ -81,23 +177,24 @@ int main()
 	 JSONNode result = root.at("result")[0];
 	 
 	 time_t step = 3600;
-	 map<time_t,vector<Trade> > trades;
+	 Period_map periods;
 
 	 // group results by base time
 	 for (JSONNode::const_iterator it = result.begin();
 	      it != result.end(); ++it) {
 	    Trade t = get_trade(*it);
-	    time_t base = t.time - (t.time % step);
-	    trades[base].push_back(t);
+	    time_t x = t.time - (t.time % step);
+	    periods[x].push_back(t);
 	 }
 	
-	 // create candlesticks
-	 for (map<time_t,vector<Trade> >::const_iterator it = trades.begin();
-	      it != trades.end(); ++it) 
-	 {
-	    cout << it->first << endl;
-	 }
+	 vector<Candlestick> candlesticks;
 
+	 // create candlesticks
+	 append_candlesticks(periods, candlesticks);
+
+	 // print candlesticks
+	 for (int i = 0; i<candlesticks.size(); ++i)
+	    cout << candlesticks[i] << endl;
       }
 
    }
