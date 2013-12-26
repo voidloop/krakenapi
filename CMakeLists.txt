@@ -66,3 +66,11 @@ set_target_properties (kmarketdata PROPERTIES
 		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE")
 target_link_libraries (kmarketdata ${LIBS})
 
+#-------------------------------------------------------------------------------
+# Add the executable 'krt'
+#-------------------------------------------------------------------------------
+add_executable (krt krt.cpp)
+set_target_properties (krt PROPERTIES 
+		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE")
+target_link_libraries (krt ${LIBS})
+
