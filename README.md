@@ -3,18 +3,21 @@ krakenapi
 
 A C++ library for interfacing with the Kraken REST API (kraken.com).
 
+krt
+===
+
 What is krt?
-============
+------------
 
 krt is a program to download Recent Trades from Kraken market data through API.  
 
 How trades are displayed? 
-=========================
+-------------------------
  
 Recent trades are printed out to standard output in CSV format. The order of fields is "Time", "Order", "Price" and "Volume".
 
 TODO: What are input parameters?
-================================
+--------------------------------
 
 krt can get the input parameters as follows:
 
