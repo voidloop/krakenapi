@@ -186,19 +186,39 @@ string recent_trades(const KAPI& k, const KAPI::Input& i, vector<KTrade>& v)
 
 //------------------------------------------------------------------------------
 
-int main() 
-{ 
+int main(int argc, char* argv[]) 
+{
    curl_global_init(CURL_GLOBAL_ALL);
 
    try {
-      KAPI kapi;
-      KAPI::Input input;
-      
-      std::chrono::seconds dura(30);
-      std::vector<KTrade> trades;
 
-      input["pair"] = "XXBTZEUR";
-      input["since"] = "0";
+      //
+      // command line argument handling:
+      //
+      // usage:
+      //     krt <pair> [interval] [since]
+      // 
+
+      KAPI::Input input;
+      input["since"] = "0"; // by default: the oldest possible trade data
+      int interval = 0;   // by default: krt exits after download trade data
+
+      switch (argc) {
+      case 4:
+	 input["since"] = string(argv[3]);
+      case 3:
+	 istringstream(argv[2]) >> interval;      
+      case 2:
+	 input["pair"] = string(argv[1]);
+	 break;
+      default: 
+	 throw std::runtime_error("wrong number of arguments");
+      };
+
+      KAPI kapi;
+      
+      std::chrono::seconds dura(interval);
+      std::vector<KTrade> trades;
 
       while (true) {
 	 // store and print trades
@@ -208,10 +228,13 @@ int main()
 	    
 	 // next "since" is the "last" value
 	 input["since"] = last;
-	 
+
+	 // exit from the loop if interval is 0
+	 if (interval == 0) break;
+
 	 // sleep
 	 std::this_thread::sleep_for(dura);
-      }
+      } 
    }
    catch(exception& e) {
       cerr << "Error: " << e.what() << endl;

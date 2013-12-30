@@ -19,9 +19,13 @@ krt is a program to download Recent Trades from Kraken market data through API.
  
 Recent trades are printed out to standard output in CSV format. The order of fields is "Time", "Order", "Price" and "Volume".
 
-### TODO: What are input parameters?
+### Command line arguments
 
-krt can get the input parameters as follows:
+usage: krt <pair> [interval] [since]
+
+### TODO: Command line arguments
+
+krt can get the following command line arguments:
 
   -p, --pair <pair>
   Asset pair to get trade data for.
