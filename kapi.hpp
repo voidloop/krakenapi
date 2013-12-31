@@ -38,6 +38,7 @@ public:
    std::string private_method(const std::string& method,
 			      const KAPI::Input& input) const;
 
+   
    // TODO: public market data
    //void time();
    //void assets();
@@ -68,6 +69,14 @@ private:
    KAPI(const KAPI&);
    KAPI& operator=(const KAPI&);
 };
+
+//------------------------------------------------------------------------------
+// helper functions to initialize and terminate Kraker API library.
+// KAPI uses CURL, the latter has a no thread-safe function called 
+// curl_global_init(). 
+
+void initialize();
+void terminate();
 
 //------------------------------------------------------------------------------
 

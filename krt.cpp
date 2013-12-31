@@ -188,9 +188,10 @@ string recent_trades(const KAPI& k, const KAPI::Input& i, vector<KTrade>& v)
 
 int main(int argc, char* argv[]) 
 {
-   curl_global_init(CURL_GLOBAL_ALL);
-
    try {
+
+      // initialize kraken lib's resources:
+      Kraken::initialize();
 
       //
       // command line argument handling:
@@ -235,6 +236,9 @@ int main(int argc, char* argv[])
 	 // sleep
 	 std::this_thread::sleep_for(dura);
       } 
+
+      // terminate kraken lib's resources
+      Kraken::terminate();
    }
    catch(exception& e) {
       cerr << "Error: " << e.what() << endl;
@@ -243,6 +247,5 @@ int main(int argc, char* argv[])
       cerr << "Unknow exception." << endl;
    }
 
-   curl_global_cleanup();
    return 0;
 }

@@ -272,6 +272,7 @@ std::string KAPI::private_method(const std::string& method,
 
    // add custom header
    curl_slist* chunk = NULL;
+
    std::string key_header =  "API-Key: "  + key_;
    std::string sign_header = "API-Sign: " + signature(path, nonce, postdata);
 
@@ -297,6 +298,25 @@ std::string KAPI::private_method(const std::string& method,
    }
    
    return response;
+}
+
+//------------------------------------------------------------------------------
+// helper function to initialize Kraken API library's resources:
+void initialize() 
+{
+   CURLcode code = curl_global_init(CURL_GLOBAL_ALL);
+   if (code != CURLE_OK) {
+      std::ostringstream oss;
+      oss << "curl_global_init() failed: " << curl_easy_strerror(code);
+      throw std::runtime_error(oss.str());
+   }
+}
+
+//------------------------------------------------------------------------------
+// helper function to terminate Kraken API library's resources:
+void terminate() 
+{
+   curl_global_cleanup();
 }
 
 //------------------------------------------------------------------------------
