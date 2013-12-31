@@ -139,39 +139,42 @@ void group_by_time(const vector<Trade>& trades,
 		   const time_t step, 
 		   vector<Candlestick>& candlesticks)
 {
-   for (int open=0; open < trades.size();) {	 
+   vector<Trade>::const_iterator it = trades.begin();
+
+   while (it != trades.end()) {
       Candlestick period;	 
       period.volume = 0;
-      period.open = trades[open].price;
-      period.low = trades[open].price;
-      period.high = trades[open].price;
-
+      period.open = it->price;
+      period.low = it->price;
+      period.high = it->price;
+      
       // the period time
-      period.time = trades[open].time - (trades[open].time % step); 
-
-      int close = open;
-      for (; close < trades.size() && trades[close].time < (period.time+step); ++close) {
+      period.time = it->time - (it->time % step); 
+      
+      while (it != trades.end() && it->time < (period.time+step)) {
 	 // the lowest price
-	 if (trades[close].price < period.low) 
-	    period.low = trades[close].price;
+	 if (it->price < period.low) 
+	    period.low = it->price;
 
 	 // the highest price
-	 if (trades[close].price > period.high) 
-	    period.high = trades[close].price;
+	 if (it->price > period.high) 
+	    period.high = it->price;
 
 	 // sum volumes
-	 period.volume += trades[close].volume; 
+	 period.volume += it->volume;
+
+	 // last price is close time
+	 period.close = it->price;
+	 
+	 // next element
+	 it++;
       }
-      
-      // the last trade of the period
-      period.close = trades[close-1].price;
-      
+
       // store period
       candlesticks.push_back(period);
-
-      // go to next period
-      open = close;
-   }
+      
+      // next group
+   }  
 }
 
 //------------------------------------------------------------------------------
@@ -181,9 +184,18 @@ int main(int argc, char* argv[])
    try {
       time_t step = 600; // by default 10 minutes
 
+      // 
+      // usage: prog <pair> [seconds]
+      //
+
+      KAPI::Input input;
+      input["since"] = "0";
+
       switch (argc) {
+      case 3:
+	 istringstream(argv[2]) >> step;
       case 2:
-	 istringstream(argv[1]) >> step;
+	 input["pair"] = std::string(argv[1]);
 	 break;
       default:
 	 throw std::runtime_error("wrong number of arguments");
@@ -191,13 +203,7 @@ int main(int argc, char* argv[])
 
       // initialize kraken lib's resources:
       Kraken::initialize();
-      
       KAPI kapi;
-      KAPI::Input input;
-
-      // get recent trades 
-      input["pair"] = "XLTCZEUR";
-      input["since"] = "0";
 
       std::vector<Trade> trades;
       std::vector<Candlestick> candlesticks;
