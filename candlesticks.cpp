@@ -182,16 +182,24 @@ void group_by_time(const vector<Trade>& trades,
 int main(int argc, char* argv[]) 
 { 
    try {
-      time_t step = 600; // by default 10 minutes
+      time_t step = 15*60; // by default 15 minutes
+      time_t last = 24*60*60; // by default last 24 hours
 
       // 
-      // usage: prog <pair> [seconds]
+      // usage: prog <pair> [seconds] [last]
+      //
+      // kph prints out the price history of the <pair> in 
+      // the [last] number of seconds. The trade data is 
+      // showed as candlesticks grouped in periods of 
+      // [seconds] seconds.
       //
 
       KAPI::Input input;
       input["since"] = "0";
 
       switch (argc) {
+      case 4: 
+	 istringstream(argv[3]) >> last;
       case 3:
 	 istringstream(argv[2]) >> step;
       case 2:
@@ -208,19 +216,24 @@ int main(int argc, char* argv[])
       std::vector<Trade> trades;
       std::vector<Candlestick> candlesticks;
 
-      string last = recent_trades(kapi, input, trades);
+      recent_trades(kapi, input, trades);
 
       // group trades by time
       group_by_time(trades, step, candlesticks);
       
       if (!candlesticks.empty()) {
+	 // print candlestick after this threshold
+	 time_t thresh = candlesticks.back().time - last;
+
 	 auto it = candlesticks.cbegin();
 	 HA_Candlestick ha(*it);
-	 cout << ha << endl;
-	 
-	 for (++it; it != candlesticks.cend(); ++it) {
-	    ha = HA_Candlestick(*it, ha);
+	 if (ha.time > thresh) 
 	    cout << ha << endl;
+	 
+	 for (++it; it != candlesticks.cend(); ++it) {	   
+	    ha = HA_Candlestick(*it, ha);
+	    if (ha.time >= thresh) 
+	       cout << ha << endl;
 	 }
       }
    }
