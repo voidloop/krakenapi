@@ -59,12 +59,12 @@ add_executable (test main.cpp)
 target_link_libraries (test ${LIBS})
 
 #-------------------------------------------------------------------------------
-# Add the executable 'kmarketdata'
+# Add the executable 'kph'
 #-------------------------------------------------------------------------------
-add_executable (kmarketdata kmarketdata.cpp)
-set_target_properties (kmarketdata PROPERTIES 
+add_executable (kph kph.cpp)
+set_target_properties (kph PROPERTIES 
 		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE")
-target_link_libraries (kmarketdata ${LIBS})
+target_link_libraries (kph ${LIBS})
 
 #-------------------------------------------------------------------------------
 # Add the executable 'krt'
