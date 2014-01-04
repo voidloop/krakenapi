@@ -26,7 +26,8 @@ list(APPEND LIBS ${CURL_LIBRARIES})
 #-------------------------------------------------------------------------------
 # Add library kapi (krakenapi)
 #-------------------------------------------------------------------------------
-add_library (kapi STATIC kapi.cpp)
+aux_source_directory(kraken KAPI_FILES)
+add_library (kapi STATIC ${KAPI_FILES})
 
 # set some properties when CMAKE_BUILD_TYPE is "Debug"
 set_target_properties (kapi PROPERTIES 

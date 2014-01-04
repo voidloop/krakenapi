@@ -27,42 +27,16 @@
 #include <stdexcept>
 #include <ctime>
 
-#include "kapi.hpp"
+#include "kraken/kclient.hpp"
+#include "kraken/ktrade.hpp"
 #include "libjson/libjson.h"
 
 using namespace std;
 using namespace Kraken;
 
 //------------------------------------------------------------------------------
-// deals with Kraken trades:
-struct Trade {
-   double price, volume; 
-   time_t time; 
-   char order;
-
-   Trade(JSONNode node) {
-      price  = node[0].as_float();
-      volume = node[1].as_float();
-      time   = node[2].as_int();
-      order  = node[3].as_string()[0];
-   }
-};
-
-//------------------------------------------------------------------------------
-// prints out a kraken trade:
-ostream& operator<<(ostream& os, const Trade& t) 
-{
-   return os << '"'
-	     << t.time << "\",\""
-	     << t.order << "\",\""
-	     << fixed
-	     << setprecision(5) << t.price << "\",\""
-	     << setprecision(9) << t.volume << '"';
-}
-
-//------------------------------------------------------------------------------
 // helper types to map time to a group of trades:
-typedef vector<Trade> Period; 
+typedef vector<KTrade> Period; 
 typedef map<time_t,Period> Period_map;
 
 //------------------------------------------------------------------------------
@@ -118,52 +92,12 @@ ostream& operator<<(ostream& os, const Candlestick& c)
 }
 
 //------------------------------------------------------------------------------
-// downloads recent trades:
-string recent_trades(const KAPI& k, const KAPI::Input& i, vector<Trade>& v)
-{
-   string json_data = k.public_method("Trades", i);
-   JSONNode root = libjson::parse(json_data);
-   //cout << json_data << endl;
-
-   // throw an exception if there are errors in the JSON response
-   if (!root.at("error").empty()) {
-      std::ostringstream oss;
-      oss << "Kraken response contains errors: ";
-      
-      // append errors to output string stream
-      for (JSONNode::const_iterator
-	      it = root["error"].begin(); it != root["error"].end(); ++it) 
-	 oss << endl << " * " << libjson::to_std_string(it->as_string());
-      
-      throw runtime_error(oss.str());
-   }
-
-   // throw an exception if result is empty   
-   if (root.at("result").empty()) {
-      throw runtime_error("Kraken response doesn't contain result data");
-   }
-
-   const string& pair = i.at("pair");
-
-   JSONNode& result = root["result"];
-   JSONNode& result_pair = result.at(pair);
-
-   vector<Trade> output;
-   for (JSONNode::const_iterator 
-	   it = result_pair.begin(); it != result_pair.end(); ++it)
-      output.push_back(Trade(*it));
-      
-   output.swap(v);
-   return libjson::to_std_string( result.at("last").as_string() );
-}
-
-//------------------------------------------------------------------------------
 // fills a candlestick vector grouping trades by time:
-void group_by_time(const vector<Trade>& trades, 
+void group_by_time(const vector<KTrade>& trades, 
 		   const time_t step, 
 		   vector<Candlestick>& candlesticks)
 {
-   vector<Trade>::const_iterator it = trades.begin();
+   vector<KTrade>::const_iterator it = trades.begin();
 
    while (it != trades.end()) {
       Candlestick period;	 
@@ -218,8 +152,7 @@ int main(int argc, char* argv[])
       // [seconds] seconds.
       //
 
-      KAPI::Input input;
-      input["since"] = "0";
+      string pair;
 
       switch (argc) {
       case 4: 
@@ -227,7 +160,7 @@ int main(int argc, char* argv[])
       case 3:
 	 istringstream(argv[2]) >> step;
       case 2:
-	 input["pair"] = std::string(argv[1]);
+	 pair = std::string(argv[1]);
 	 break;
       default:
 	 throw std::runtime_error("wrong number of arguments");
@@ -235,14 +168,15 @@ int main(int argc, char* argv[])
 
       // initialize kraken lib's resources:
       Kraken::initialize();
-      KAPI kapi;
 
-      std::vector<Trade> trades;
-      std::vector<Candlestick> candlesticks;
+      KClient kc;
 
-      recent_trades(kapi, input, trades);
+      vector<KTrade> trades;
+      kc.trades(pair, "0", trades);
+
 
       // group trades by time
+      vector<Candlestick> candlesticks;
       group_by_time(trades, step, candlesticks);
       
       if (!candlesticks.empty()) {
