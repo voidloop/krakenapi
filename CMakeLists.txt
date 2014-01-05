@@ -54,12 +54,6 @@ set_target_properties (libjson PROPERTIES
 list (APPEND LIBS libjson)
 
 #-------------------------------------------------------------------------------
-# Add the executable 'test'
-#-------------------------------------------------------------------------------
-add_executable (test main.cpp)
-target_link_libraries (test ${LIBS})
-
-#-------------------------------------------------------------------------------
 # Add the executable 'kph'
 #-------------------------------------------------------------------------------
 add_executable (kph kph.cpp)
