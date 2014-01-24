@@ -2,8 +2,8 @@
 
   Kraken Price Histoty (kph) is program to download from kraken.com
   the trade data of the last 24 hours and to display it as 
-  Heikin-Ashi candlestiks.
-  The candlestiks are printed out in CSV format to stdout as follows:
+  Heikin-Ashi candlesticks.
+  The candlesticks are printed out in CSV format to stdout as follows:
   
     date,open,high,low,close
     
