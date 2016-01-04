@@ -21,18 +21,18 @@ Recent trades are printed out to standard output in CSV format. The order of fie
 
 ### Command line arguments
 
-usage: krt \<pair\> [interval] [since]
+usage: krt \<pair\> \[interval\] \[since\]
 
 krt can get the following command line arguments:
 
   \<pair\>   
   Asset pair to get trade data for.
 
-  [since]  
+  \[since\]  
   (Optional) return trade data since given id. By default [since] is equal 
   to "0" to indicate the oldest possible trade data.
 
-  [interval] 
+  \[interval\] 
   (Optional) how many seconds the program have to download new trade data. 
   By default the program doesn't use this parameter and it exits after 
   download trade data. If [interval] is equal to 0 the program will not 
