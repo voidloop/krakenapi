@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project (KRAKENAPI)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 #-------------------------------------------------------------------------------
 # Control CMAKE_BUILD_TYPE, default: Debug
@@ -31,7 +32,7 @@ add_library (kapi STATIC ${KAPI_FILES})
 
 # set some properties when CMAKE_BUILD_TYPE is "Debug"
 set_target_properties (kapi PROPERTIES 
-		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE"
+		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT"
 		      DEBUG_POSTFIX "d")
 
 list (APPEND LIBS kapi)
@@ -48,7 +49,7 @@ set_target_properties (libjson PROPERTIES PREFIX "")
 
 # set some properties when CMAKE_BUILD_TYPE is "Debug"
 set_target_properties (libjson PROPERTIES 
-		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE"
+		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT"
 		      DEBUG_POSTFIX "d")
 
 list (APPEND LIBS libjson)
@@ -58,7 +59,7 @@ list (APPEND LIBS libjson)
 #-------------------------------------------------------------------------------
 add_executable (kph kph.cpp)
 set_target_properties (kph PROPERTIES 
-		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE")
+		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
 target_link_libraries (kph ${LIBS})
 
 #-------------------------------------------------------------------------------
@@ -66,6 +67,6 @@ target_link_libraries (kph ${LIBS})
 #-------------------------------------------------------------------------------
 add_executable (krt krt.cpp)
 set_target_properties (krt PROPERTIES 
-		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE")
+		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
 target_link_libraries (krt ${LIBS})
 

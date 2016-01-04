@@ -21,11 +21,11 @@ Recent trades are printed out to standard output in CSV format. The order of fie
 
 ### Command line arguments
 
-usage: krt <pair> [interval] [since]
+usage: krt \<pair\> [interval] [since]
 
 krt can get the following command line arguments:
 
-  <pair>   
+  \<pair\>   
   Asset pair to get trade data for.
 
   [since]  

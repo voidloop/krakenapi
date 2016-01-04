@@ -234,11 +234,11 @@ std::string KClient::public_method(const std::string& method,
 
    // reset the http header
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
- 
+
    // where CURL write callback function stores the response
    std::string response;
    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&response));
-  
+ 
    // perform CURL request
    CURLcode result = curl_easy_perform(curl_);
    if (result != CURLE_OK) {
@@ -314,6 +314,8 @@ std::string KClient::trades(const std::string& pair,
    json_string data = libjson::to_json_string( public_method("Trades", ki) ); 
    JSONNode root = libjson::parse(data);
 
+
+
    // throw an exception if there are errors in the JSON response
    if (!root.at("error").empty()) {
       std::ostringstream oss;
@@ -332,8 +334,10 @@ std::string KClient::trades(const std::string& pair,
       throw std::runtime_error("Kraken response doesn't contain result data");
    }
 
-   JSONNode& result = root["result"];
-   JSONNode& result_pair = result.at(pair);
+
+
+   JSONNode &result = root["result"];
+   JSONNode &result_pair = result[0];
    std::string last = libjson::to_std_string( result.at("last").as_string() );
 
    std::vector<KTrade> buf;

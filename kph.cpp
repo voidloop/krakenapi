@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
 	 if (ha.time > thresh) 
 	    cout << ha << endl;
 	 
-	 for (++it; it != candlesticks.cend(); ++it) {	   
+	 for (++it; it != candlesticks.end(); ++it) {	   
 	    ha = HA_Candlestick(*it, ha);
 	    if (ha.time >= thresh) 
 	       cout << ha << endl;
