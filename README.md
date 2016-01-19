@@ -29,11 +29,11 @@ krt can get the following command line arguments:
   Asset pair to get trade data for.
 
   \[since\]  
-  (Optional) return trade data since given id. By default [since] is equal 
+  (Optional) the program returns trade data since given id. By default [since] is equal 
   to "0" to indicate the oldest possible trade data.
 
   \[interval\] 
-  (Optional) how many seconds the program have to download new trade data. 
-  By default the program doesn't use this parameter and it exits after 
+  (Optional) how many seconds the program has to download new trade data. 
+  By default the program doesn't use this parameter and it exits immidiatly after 
   download trade data. If [interval] is equal to 0 the program will not 
   use this parameter.
