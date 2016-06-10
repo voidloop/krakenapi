@@ -2,11 +2,15 @@ cmake_minimum_required (VERSION 2.6)
 project (KRAKENAPI)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+IF(COMMAND cmake_policy)
+	cmake_policy(SET CMP0043 OLD)
+ENDIF()
+
 #-------------------------------------------------------------------------------
 # Control CMAKE_BUILD_TYPE, default: Debug
 #-------------------------------------------------------------------------------
 if (NOT CMAKE_BUILD_TYPE)
-   set (CMAKE_BUILD_TYPE "Debug" CACHE string "Build type" FORCE)
+	set (CMAKE_BUILD_TYPE "Debug" CACHE string "Build type" FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 message (STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 
