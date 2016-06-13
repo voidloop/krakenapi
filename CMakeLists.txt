@@ -1,8 +1,16 @@
 cmake_minimum_required (VERSION 2.6)
 project (KRAKENAPI)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-IF(COMMAND cmake_policy)
+add_definitions("-std=c++11")
+
+
+IF (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+	add_definitions("-Wno-tautological-undefined-compare")
+ENDIF()
+
+#-------------------------------------------------------------------------------
+IF (COMMAND cmake_policy)
 	cmake_policy(SET CMP0043 OLD)
 ENDIF()
 
