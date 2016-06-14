@@ -3,13 +3,15 @@ project (KRAKENAPI)
 
 add_definitions("-std=c++11")
 
+#-------------------------------------------------------------------------------
 IF (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
 	add_definitions("-Wno-tautological-undefined-compare")
 
 ENDIF()
 
+#-------------------------------------------------------------------------------
 IF (APPLE)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flat_namespace -undefined suppress")
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flat_namespace -undefined suppress")
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flat_namespace -undefined suppress")
 	set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flat_namespace -undefined suppress")
 	set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -flat_namespace -undefined suppress")
