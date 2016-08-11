@@ -52,7 +52,7 @@ set_target_properties (kapi PROPERTIES
 		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT"
 		      DEBUG_POSTFIX "d")
 
-list (APPEND LIBS kapi)
+list (INSERT LIBS 0 kapi)
 
 #-------------------------------------------------------------------------------
 # Add library libjson
