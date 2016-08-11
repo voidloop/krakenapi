@@ -15,7 +15,7 @@ IF (APPLE)
 ENDIF (APPLE)
 
 #-------------------------------------------------------------------------------
-IF (COMMAND cmake_policy)
+IF (POLICY CMP0043)
 	cmake_policy(SET CMP0043 OLD)
 ENDIF()
 
