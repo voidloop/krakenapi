@@ -27,7 +27,7 @@ public:
    // constructor with empty API key and API secret
    KAPI();
 
-   // distructor
+   // destructor
    ~KAPI();
 
    // makes public method to kraken.com 

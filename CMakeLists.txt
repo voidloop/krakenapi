@@ -87,3 +87,10 @@ set_target_properties (krt PROPERTIES
 		      COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
 target_link_libraries (krt ${LIBS})
 
+#-------------------------------------------------------------------------------
+# Add the executable 'main'
+#-------------------------------------------------------------------------------
+#add_executable (main main.cpp kapi.cpp)
+#set_target_properties (main PROPERTIES
+#		COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
+#target_link_libraries (main ${LIBS})
