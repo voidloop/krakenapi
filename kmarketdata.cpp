@@ -202,7 +202,7 @@ int main()
       cerr << "Error: " << e.what() << endl;
    }
    catch(...) {
-      cerr << "Unknow exception." << endl;
+      cerr << "Unknown exception." << endl;
    }
 
    curl_global_cleanup();

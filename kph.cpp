@@ -1,6 +1,6 @@
 /*
 
-  Kraken Price Histoty (kph) is program to download from kraken.com
+  Kraken Price History (kph) is program to download from kraken.com
   the trade data of the last 24 hours and to display it as 
   Heikin-Ashi candlesticks.
   The candlesticks are printed out in CSV format to stdout as follows:
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
       return 1;
    }
    catch(...) {
-      cerr << "Unknow exception." << endl;
+      cerr << "Unknown exception." << endl;
       return 1;
    }
 

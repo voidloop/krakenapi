@@ -48,14 +48,14 @@ private:
    void init();
 
    // TODO: gather common commands from public_method and 
-   // private_method in a single method: curl_perfom
+   // private_method in a single method: curl_perform
 
    // create signature for private requests
    std::string signature(const std::string& path,
 			 const std::string& nonce,
 			 const std::string& postdata) const;
 
-   // CURL writefunction callback
+   // CURL callback
    static size_t write_cb(char* ptr, size_t size, 
 			  size_t nmemb, void* userdata);
 
@@ -71,7 +71,7 @@ private:
 };
 
 //------------------------------------------------------------------------------
-// helper functions to initialize and terminate Kraker API library.
+// helper functions to initialize and terminate Kraken API library.
 // KAPI uses CURL, the latter has a no thread-safe function called 
 // curl_global_init(). 
 

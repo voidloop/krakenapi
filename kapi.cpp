@@ -12,7 +12,6 @@
 #include <openssl/bio.h>
 
 #include "kapi.hpp"
-#include "libjson/libjson.h"
 
 #define CURL_VERBOSE 0L //1L = enabled, 0L = disabled
 
@@ -179,7 +178,7 @@ void KAPI::init()
 }
 
 //------------------------------------------------------------------------------
-// distructor:
+// destructor:
 KAPI::~KAPI() 
 {
    curl_easy_cleanup(curl_);
@@ -323,6 +322,6 @@ void terminate()
 
 //------------------------------------------------------------------------------
 
-}; //namespace Kraken
+} //namespace Kraken
 
 //------------------------------------------------------------------------------
