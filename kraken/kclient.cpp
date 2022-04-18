@@ -351,6 +351,43 @@ std::string KClient::trades(const std::string& pair,
 }
 
 //------------------------------------------------------------------------------
+// get server unixtime:
+std::string KClient::time(TIME_TYPE type = TIME_TYPE::UNIX)
+{
+   KInput ki;
+   json_string data = libjson::to_json_string( public_method("Time", ki) );
+   JSONNode root = libjson::parse(data);
+
+   if (!root.at("error").empty()) {
+      std::ostringstream oss;
+      oss << "Kraken response contains errors: ";
+      
+      // append errors to output string stream
+      for (JSONNode::const_iterator
+	      it = root["error"].begin(); it != root["error"].end(); ++it) 
+	 oss << std::endl << " * " << libjson::to_std_string(it->as_string());
+      
+      throw std::runtime_error(oss.str());
+   }
+
+   if (root.at("result").empty()) {
+      throw std::runtime_error("Kraken response doesn't contain result data");
+   }
+
+   JSONNode &result = root["result"];
+   JSONNode &result_pair = result[0];
+   
+   std::string time;
+   switch(type){   
+      case TIME_TYPE::UNIX:
+         time = libjson::to_std_string( result.at("unixtime").as_string() );   
+      case TIME_TYPE::RFC:
+         time = libjson::to_std_string( result.at("rfc1123").as_string() );   
+   }
+   return time;
+}
+
+//------------------------------------------------------------------------------
 // helper function to initialize Kraken API library's resources:
 void initialize() 
 {

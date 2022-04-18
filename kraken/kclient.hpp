@@ -34,6 +34,10 @@ public:
    // distructor
    ~KClient();
 
+   /***************
+    * MARKET DATA *
+    ***************/
+
    // makes public method to kraken.com 
    std::string public_method(const std::string& method,
 			     const KInput& input) const;
@@ -46,8 +50,11 @@ public:
    std::string trades(const std::string& pair, const std::string& since,
 		      std::vector<KTrade>& output);
 
+   // return the server time
+   enum TIME_TYPE {UNIX, RFC};
+   std::string time(TIME_TYPE type);
+
    // TODO: public market data
-   // void time();
    // void assets();
    // ...
 
