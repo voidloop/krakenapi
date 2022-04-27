@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "kapi.hpp"
+#include "../kapi.hpp"
 
 using namespace std;
 using namespace Kraken;

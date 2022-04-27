@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8.12)
 project (KRAKENAPI)
 
 add_definitions("-std=c++11")
@@ -88,9 +88,17 @@ set_target_properties (krt PROPERTIES
 target_link_libraries (krt ${LIBS})
 
 #-------------------------------------------------------------------------------
-# Add the executable 'main'
+# Add the executable 'private_method'
 #-------------------------------------------------------------------------------
-#add_executable (main main.cpp kapi.cpp)
-#set_target_properties (main PROPERTIES
-#		COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
-#target_link_libraries (main ${LIBS})
+add_executable (private_method examples/private_method.cpp kapi.cpp)
+set_target_properties (private_method PROPERTIES
+		COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
+target_link_libraries (private_method ${LIBS})
+
+#-------------------------------------------------------------------------------
+# Add the executable 'public_method'
+#-------------------------------------------------------------------------------
+add_executable (public_method examples/public_method.cpp kapi.cpp)
+set_target_properties (public_method PROPERTIES
+		COMPILE_DEFINITIONS_DEBUG "JSON_DEBUG;JSON_SAFE;JSON_ISO_STRICT")
+target_link_libraries (public_method ${LIBS})
