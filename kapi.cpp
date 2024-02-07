@@ -226,20 +226,19 @@ std::string KAPI::public_method(const std::string& method,
 {
    // build method URL
    std::string path = "/" + version_ + "/public/" + method;
-   std::string method_url = url_ + path;   
+   std::string method_url = url_ + path + "?" + build_query(input);
    curl_easy_setopt(curl_, CURLOPT_URL, method_url.c_str());
-
-   // build postdata 
-   std::string postdata = build_query(input);
-   curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postdata.c_str());
 
    // reset the http header
    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, NULL);
- 
+
    // where CURL write callback function stores the response
    std::string response;
    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, static_cast<void*>(&response));
-  
+
+   // Set GET method
+   curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1L);
+
    // perform CURL request
    CURLcode result = curl_easy_perform(curl_);
    if (result != CURLE_OK) {
